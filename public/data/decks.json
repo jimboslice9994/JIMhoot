@@ -1,0 +1,50 @@
+{
+  "decks": [
+    {
+      "id": "fc_bio_basics",
+      "title": "Biology Basics",
+      "type": "flashcards",
+      "source": "bundled",
+      "version": 1,
+      "createdAt": 1735689600000,
+      "updatedAt": 1735689600000,
+      "tags": ["biology"],
+      "items": [
+        { "id": "fc1", "front": "Powerhouse of the cell?", "back": "Mitochondria", "tags": ["cells"] },
+        { "id": "fc2", "front": "Genetic material is stored in?", "back": "DNA", "tags": ["genetics"] }
+      ]
+    },
+    {
+      "id": "mcq_geo_capitals",
+      "title": "World Capitals",
+      "type": "mcq",
+      "source": "bundled",
+      "version": 1,
+      "createdAt": 1735689600000,
+      "updatedAt": 1735689600000,
+      "tags": ["geography"],
+      "items": [
+        {
+          "id": "q1",
+          "question": "Capital of France?",
+          "choices": { "A": "Paris", "B": "Rome", "C": "Berlin", "D": "Madrid" },
+          "correct": "A",
+          "explanation": "Paris is France's capital.",
+          "tags": ["europe"],
+          "imageUrl": "",
+          "timeLimitSec": 15
+        },
+        {
+          "id": "q2",
+          "question": "Capital of Japan?",
+          "choices": { "A": "Beijing", "B": "Seoul", "C": "Tokyo", "D": "Kyoto" },
+          "correct": "C",
+          "explanation": "Tokyo is the current capital of Japan.",
+          "tags": ["asia"],
+          "imageUrl": "",
+          "timeLimitSec": 20
+        }
+      ]
+    }
+  ]
+}

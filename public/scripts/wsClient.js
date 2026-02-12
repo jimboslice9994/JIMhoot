@@ -1,0 +1,64 @@
+import { log } from './debug.js';
+
+export class WsClient {
+  constructor() {
+    this.ws = null;
+    this.handlers = new Map();
+    this.manualClose = false;
+    this.backoff = 600;
+    this.maxBackoff = 8000;
+    this.rejoinPayload = null;
+  }
+
+  on(event, cb) { this.handlers.set(event, cb); }
+
+  connect() {
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${proto}://${window.location.host}/ws`;
+    log('ws.connect', { url });
+    this.ws = new WebSocket(url);
+
+    this.ws.addEventListener('open', () => {
+      log('ws.open');
+      this.backoff = 600;
+      if (this.rejoinPayload) {
+        this.send('rejoin_room', this.rejoinPayload);
+      }
+    });
+
+    this.ws.addEventListener('message', (evt) => {
+      let data;
+      try { data = JSON.parse(evt.data); } catch { return; }
+      log('ws.message', { event: data.event });
+      const handler = this.handlers.get(data.event);
+      if (handler) handler(data.payload);
+    });
+
+    this.ws.addEventListener('close', () => {
+      log('ws.close');
+      if (this.manualClose) return;
+      const jitter = Math.floor(Math.random() * 200);
+      const delay = this.backoff + jitter;
+      setTimeout(() => this.connect(), delay);
+      this.backoff = Math.min(this.backoff * 2, this.maxBackoff);
+    });
+
+    this.ws.addEventListener('error', (e) => log('ws.error', { type: e.type }));
+  }
+
+  send(event, payload) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      log('ws.send.skip', { event });
+      return false;
+    }
+    this.ws.send(JSON.stringify({ event, payload, ts: Date.now() }));
+    return true;
+  }
+
+  setRejoinPayload(payload) { this.rejoinPayload = payload; }
+
+  close() {
+    this.manualClose = true;
+    this.ws?.close();
+  }
+}

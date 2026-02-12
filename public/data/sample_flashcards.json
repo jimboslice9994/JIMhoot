@@ -1,0 +1,14 @@
+{
+  "id": "fc_bio_basics",
+  "title": "Biology Basics",
+  "type": "flashcards",
+  "source": "bundled",
+  "version": 1,
+  "createdAt": 1735689600000,
+  "updatedAt": 1735689600000,
+  "tags": ["biology"],
+  "items": [
+    { "id": "fc1", "front": "Powerhouse of the cell?", "back": "Mitochondria", "tags": ["cells"] },
+    { "id": "fc2", "front": "Genetic material is stored in?", "back": "DNA", "tags": ["genetics"] }
+  ]
+}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaskNest</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>TaskNest</h1>
+        <p>Simple daily planner that saves your tasks automatically.</p>
+      </header>
+
+      <form id="task-form" class="task-form">
+        <input
+          id="task-input"
+          type="text"
+          name="task"
+          placeholder="What do you need to do?"
+          autocomplete="off"
+          required
+        />
+        <button type="submit">Add</button>
+      </form>
+
+      <section class="task-controls">
+        <button id="clear-completed" type="button">Clear completed</button>
+        <p id="task-count" aria-live="polite"></p>
+      </section>
+
+      <ul id="task-list" class="task-list" aria-label="Task list"></ul>
+    </main>
+
+    <template id="task-template">
+      <li class="task-item">
+        <label>
+          <input type="checkbox" class="task-check" />
+          <span class="task-text"></span>
+        </label>
+        <button type="button" class="delete-btn" aria-label="Delete task">✕</button>
+      </li>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
