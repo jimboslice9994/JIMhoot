@@ -8,7 +8,7 @@ export function renderJoin(root, ws, playerId) {
     <label>Room code</label><input id="joinRoom" maxlength="5" />
     <label>Nickname</label><input id="joinNick" />
     <button id="joinBtn" type="button">Join</button>
-    <p id="joinState" class="muted" aria-live="polite"></p>
+    <p id="joinState" class="muted"></p>
   </section>
   <section id="answerCard" class="card hidden">
     <h3 id="qTitle">Question</h3>
@@ -19,7 +19,7 @@ export function renderJoin(root, ws, playerId) {
       <button data-choice="C" type="button">C</button>
       <button data-choice="D" type="button">D</button>
     </div>
-    <p id="ack" class="muted" aria-live="polite"></p>
+    <p id="ack" class="muted"></p>
   </section>`;
 
   let roomCode = '';
@@ -61,7 +61,7 @@ export function renderJoin(root, ws, playerId) {
   ws.on('lobby_state', (payload) => {
     if (payload.roomCode !== roomCode) return;
     const stateEl = document.getElementById('joinState');
-    if (stateEl) stateEl.textContent = `Connected. Players: ${payload.players.length} • State: ${payload.state} • Mode: ${payload.settings?.gameMode || 'classic'} • Timer: ${payload.settings?.timerSec || '--'}s`; 
+    if (stateEl) stateEl.textContent = `Connected. Players: ${payload.players.length} • State: ${payload.state}`;
   });
 
   ws.on('question', (payload) => {

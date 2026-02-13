@@ -1,117 +1,49 @@
-# PulseLearn (original learning platform)
+# Household Study Platform
 
-PulseLearn is a local-first learning app inspired by modern study/game tools with three modes:
-- Real-time multiplayer quiz (host + players)
-- Flashcards with spaced repetition and mastery tracking
-- Fill-in-the-blank with fuzzy matching + partial credit
+A local-first study app built with vanilla JS + Node + `ws`.
 
-## Current status (Milestone 2, chunk 1)
-- ✅ Baseline mode shell + routing (`#/solo`, `#/import`, `#/host`, `#/join`)
-- ✅ Deck import (CSV + JSON) with validation and row-level reporting
-- ✅ Imported quiz decks can be hosted directly in multiplayer rooms
-- ✅ Flashcards with SM-2-style scheduling logic
-- ✅ Fill-in with normalization + Levenshtein-based close/partial scoring
-- ✅ Multiplayer scaffold + lobby + event contract endpoint
-- ✅ Feature flags + analytics hooks + safer user-facing error messages
-- ✅ Unit tests for learning logic, contract checks, multiplayer state machine, and auth store
-- ✅ Auth API (register/login/logout/me) with cookie sessions and auth rate limits
+## What it does
+- Smooth flip flashcards with self-check (correct/incorrect + redo missed)
+- Single-player quiz mode (A/B/C/D) with timer, summary, review missed, and shuffle restart
+- Fill-in-the-blank mode with hints and answer feedback
+- CSV upload (paste or file) that auto-generates available study modes per deck
+- Realtime host/join mode over WebSockets (optional)
+- Mobile on-screen debug console for troubleshooting
+- Mastery snapshot table (attempts, accuracy, best streak)
 
-## Architecture snapshot
-- **Frontend:** Vanilla JS modules (`public/scripts`) + hash routing
-- **Backend:** Node HTTP server + `ws` WebSocket server (`server.js`)
-- **Data model:** localStorage for study/user state, server memory for live rooms
-- **Feature flags:** server env (`FEATURE_MULTIPLAYER`, `FEATURE_ANALYTICS`, `FEATURE_NEW_SCORING`)
-
-## Folder blueprint
-```text
-.
-├── server.js
-├── lib/
-│   ├── contracts.js
-│   ├── featureFlags.js
-│   └── multiplayerState.js
-├── tests/
-│   ├── contracts.test.js
-│   ├── learning.test.js
-│   └── state-machine.test.js
-├── public/
-│   ├── index.html
-│   ├── data/
-│   ├── styles/main.css
-│   └── scripts/
-│       ├── app.js
-│       ├── importer.js
-│       ├── learning.js
-│       ├── flashcards.js
-│       ├── fillBlank.js
-│       ├── soloQuiz.js
-│       ├── multiplayerHost.js
-│       ├── multiplayerPlayer.js
-│       ├── wsClient.js
-│       ├── featureFlags.js
-│       ├── analytics.js
-│       └── ...
-└── package.json
-```
-
-## Local run
+## Run
 ```bash
 npm install
-npm run check
-npm test
 npm start
 ```
-Open `http://localhost:3000/#/solo`
+Open: `http://localhost:3000/#/solo`
 
-## Env vars
-```bash
-PORT=3000
-FEATURE_MULTIPLAYER=true
-FEATURE_ANALYTICS=false
-FEATURE_NEW_SCORING=true
-FEATURE_AUTH=true
-ALLOWED_ORIGINS=http://localhost:3000
-```
+## Routes
+- `/#/solo` study deck library
+- `/#/import` CSV import
+- `/#/host` realtime host
+- `/#/join` realtime player
 
-## API + WS contracts
-- `GET /healthz`
-- `GET /api/feature-flags`
-- `GET /api/decks`
-- `GET /api/contracts/ws`
-- `POST /api/analytics` (best-effort, no UI crash)
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
-- `GET /api/auth/csrf`
+## CSV columns
+Required:
+- `deck_name`
 
-WebSocket events are exposed via `/api/contracts/ws` for contract-level checks.
+Optional quiz fields:
+- `question`, `choice_a`, `choice_b`, `choice_c`, `choice_d`, `correct_choice`, `answer_explanation`
 
-## Replit deploy
-1. Import repo into Replit
-2. Run `npm install`
-3. Set env vars in Replit Secrets (optional)
-4. Run `npm start`
+Optional flashcard fields:
+- `flashcard_front`, `flashcard_back`
 
-## GitHub + CI
-- CI config included in `.github/workflows/ci.yml`
-- Push and open PR; CI runs `npm run check` + `npm test`
+Optional fill-blank fields:
+- `fill_blank_sentence`, `fill_blank_answer`
 
-## Accessibility + UX baseline
-- Semantic sections and labels
-- Keyboard support for flashcards
-- Focus-visible controls and aria-live feedback areas
-- User-safe error copy for import failures
+Optional metadata:
+- `tags` (pipe-delimited), `difficulty`
 
-## Security/reliability baseline
-- Input normalization and validation on client + server
-- WS message size limits and event rate limits
-- Room caps and idle room reaping
-- Structured event logging for multiplayer lifecycle
+Each row can generate one or more modes depending on fields present.
 
-
-## Security notes
-- Auth uses HttpOnly session cookie plus per-session CSRF token for state-changing auth actions.
-- Session tokens are rotated on register/login and expire server-side.
-- HTTP and WS endpoints include rate limiting and request payload validation.
-- Configure `ALLOWED_ORIGINS` in production to restrict cross-origin API writes.
+## Household multiplayer performance tips
+- For lowest latency, run server on one home device and have everyone join `http://<host-lan-ip>:3000`.
+- Keep all devices on same Wi-Fi network and avoid guest-network isolation.
+- Host can use **Skip wait / Next** to advance phases faster in live games.
+- The app now includes client RTT logging and reconnect counters in host/player views.

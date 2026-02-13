@@ -10,8 +10,6 @@ export function renderHost(root, decks, ws, playerId) {
     <p id="hostLatency" class="muted">RTT: -- ms</p>
     <label>Nickname</label><input id="hostNick" value="Host" />
     <label>Quiz Deck</label><select id="hostDeck">${options}</select>
-    <label>Game mode</label><select id="hostMode"><option value="classic">Classic (simultaneous answers)</option></select>
-    <label>Question timer (seconds)</label><input id="hostTimer" type="number" min="5" max="120" value="10" />
     <button id="hostCreate" type="button" ${playable.length ? '' : 'disabled'}>Create room</button>
     <p id="hostRoom" class="muted">${playable.length ? '' : 'No quiz decks available. Import CSV first.'}</p>
     <div class="row">
@@ -27,12 +25,7 @@ export function renderHost(root, decks, ws, playerId) {
     const nickname = sanitizeNickname(document.getElementById('hostNick')?.value) || 'Host';
     const deck = selectedDeck();
     if (!deck) return;
-    const gameMode = document.getElementById('hostMode')?.value || 'classic';
-    const timerSec = Number(document.getElementById('hostTimer')?.value) || 10;
-    const importedDeck = deck.source === 'imported'
-      ? { id: deck.id, title: deck.title, modes: { quiz: deck.modes.quiz } }
-      : undefined;
-    ws.send('join_room', { role: 'host', playerId, nickname, deckId: deck.id, importedDeck, gameMode, timerSec });
+    ws.send('join_room', { role: 'host', playerId, nickname, deckId: deck.id });
   });
 
   document.getElementById('hostStart')?.addEventListener('click', () => {
