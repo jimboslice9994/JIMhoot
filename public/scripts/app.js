@@ -4,14 +4,11 @@ import { loadDecks, renderDeckLibrary, getDeckById } from './decks.js';
 import { renderFlashcards } from './flashcards.js';
 import { renderSoloQuiz } from './soloQuiz.js';
 import { renderFillBlank } from './fillBlank.js';
-import { parseImportText } from './importer.js';
-import { saveImportedDecks, getPlayerId, getStats, setAnalyticsOptIn, getAnalyticsOptIn } from './storage.js';
+import { parseAndImportCsv } from './csv.js';
+import { saveImportedDecks, getPlayerId, getStats } from './storage.js';
 import { WsClient } from './wsClient.js';
 import { renderHost } from './multiplayerHost.js';
 import { renderJoin } from './multiplayerPlayer.js';
-import { loadFeatureFlags } from './featureFlags.js';
-import { track } from './analytics.js';
-import { renderAuthCard } from './auth.js';
 
 initDebugConsole();
 
@@ -33,27 +30,14 @@ function renderMasterySnapshot(decks) {
     .filter(Boolean)
     .join('');
 
-  if (!rows) return '<p class="muted">No study stats yet. Play a round to start tracking mastery.</p>';
-  return `<table class="stats-table"><thead><tr><th>Deck</th><th>Attempts</th><th>Accuracy</th><th>Best streak</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
+  if (!rows) {
+    return '<p class="muted">No study stats yet. Play a round to start tracking mastery.</p>';
+  }
 
-function renderModeSwitcher(active) {
-  return `<section class="card" aria-label="Mode Switcher">
-    <div class="row">
-      <button type="button" data-nav="#/solo" ${active === 'solo' ? 'aria-current="page"' : ''}>Study</button>
-      <button type="button" data-nav="#/import" ${active === 'import' ? 'aria-current="page"' : ''}>Import</button>
-      <button type="button" data-nav="#/host" ${active === 'host' ? 'aria-current="page"' : ''}>Host</button>
-      <button type="button" data-nav="#/join" ${active === 'join' ? 'aria-current="page"' : ''}>Join</button>
-    </div>
-  </section>`;
-}
-
-function bindModeNav() {
-  document.querySelectorAll('[data-nav]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      window.location.hash = btn.dataset.nav;
-    });
-  });
+  return `<table class="stats-table">
+    <thead><tr><th>Deck</th><th>Attempts</th><th>Accuracy</th><th>Best streak</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
 function launchMode(root, deck, mode) {
@@ -61,23 +45,26 @@ function launchMode(root, deck, mode) {
   modeRoot.id = 'mode-root';
   root.appendChild(modeRoot);
 
-  track('study_mode_opened', { deckId: deck.id, mode });
-
-  if (mode === 'flashcards') return renderFlashcards(modeRoot, deck);
+  if (mode === 'flashcards') {
+    renderFlashcards(modeRoot, deck);
+    return;
+  }
   if (mode === 'quiz') {
     const timerInput = document.getElementById('solo-timer');
     const shuffleInput = document.getElementById('solo-shuffle');
-    return renderSoloQuiz(modeRoot, deck, {
+    renderSoloQuiz(modeRoot, deck, {
       timerSec: Number(timerInput?.value) || 10,
       shuffle: Boolean(shuffleInput?.checked),
     });
+    return;
   }
-  if (mode === 'fillBlank') return renderFillBlank(modeRoot, deck);
+  if (mode === 'fillBlank') {
+    renderFillBlank(modeRoot, deck);
+  }
 }
 
 async function renderSoloRoute(decks) {
-  app.innerHTML = `${renderModeSwitcher('solo')}
-  <section class="card">
+  app.innerHTML = `<section class="card">
     <h2>Deck Library</h2>
     <p class="muted">Select a deck mode below to start studying.</p>
     <div class="row">
@@ -86,10 +73,10 @@ async function renderSoloRoute(decks) {
     </div>
     <section id="deck-library" class="deck-library">${renderDeckLibrary(decks)}</section>
   </section>
-  <section class="card"><h2>Mastery Snapshot</h2>${renderMasterySnapshot(decks)}</section>`;
-
-  bindModeNav();
-  renderAuthCard(app, await loadFeatureFlags());
+  <section class="card">
+    <h2>Mastery Snapshot</h2>
+    ${renderMasterySnapshot(decks)}
+  </section>`;
 
   const library = document.getElementById('deck-library');
   library?.addEventListener('click', (event) => {
@@ -104,23 +91,18 @@ async function renderSoloRoute(decks) {
 }
 
 async function renderImportRoute() {
-  app.innerHTML = `${renderModeSwitcher('import')}
-  <section class="card">
-    <h2>Import Decks</h2>
-    <p class="muted">Upload CSV or JSON deck payload with validation.</p>
-    <label>Import type</label>
-    <select id="importType"><option value="csv">CSV</option><option value="json">JSON</option></select>
-    <label>Paste text</label>
-    <textarea id="importText" rows="10" placeholder="Paste CSV/JSON here"></textarea>
-    <label>Or upload file</label>
-    <input id="importFile" type="file" accept=".csv,.json,text/csv,application/json" />
+  app.innerHTML = `<section class="card">
+    <h2>Import CSV</h2>
+    <p class="muted">Required column: deck_name. Optional mode columns auto-generate flashcards, quiz, and fill-in-the-blank.</p>
+    <label>Paste CSV text</label>
+    <textarea id="importText" rows="10" placeholder="Paste CSV here"></textarea>
+    <label>Or upload CSV file</label>
+    <input id="importFile" type="file" accept=".csv,text/csv" />
     <button id="importBtn" type="button">Import</button>
     <pre id="importReport" class="muted"></pre>
   </section>`;
 
-  bindModeNav();
-
-  async function getText() {
+  async function getCsvText() {
     const pasted = document.getElementById('importText')?.value.trim();
     if (pasted) return pasted;
     const file = document.getElementById('importFile')?.files?.[0];
@@ -129,63 +111,35 @@ async function renderImportRoute() {
   }
 
   document.getElementById('importBtn')?.addEventListener('click', async () => {
-    try {
-      const inputText = await getText();
-      if (!inputText) {
-        document.getElementById('importReport').textContent = 'No input provided';
-        return;
-      }
-      const type = document.getElementById('importType').value;
-      const report = parseImportText(inputText, type);
-      if (report.ok) {
-        saveImportedDecks(report.decks);
-        track('deck_imported', { sourceType: report.sourceType, count: report.decks.length });
-      }
-      document.getElementById('importReport').textContent = JSON.stringify(report, null, 2);
-    } catch {
-      document.getElementById('importReport').textContent = 'Import failed. Please check file format and try again.';
-      track('deck_import_failed');
+    const csvText = await getCsvText();
+    if (!csvText) {
+      document.getElementById('importReport').textContent = 'No CSV provided';
+      return;
     }
+    const report = parseAndImportCsv(csvText);
+    if (report.ok) {
+      saveImportedDecks(report.decks);
+    }
+    document.getElementById('importReport').textContent = JSON.stringify(report, null, 2);
   });
-}
-
-function renderAnalyticsToggle(flags) {
-  if (!flags.analytics) return '';
-  const checked = getAnalyticsOptIn() ? 'checked' : '';
-  return `<section class="card"><label><input type="checkbox" id="analyticsOpt" ${checked} /> Enable anonymous analytics</label></section>`;
 }
 
 async function render() {
   const route = getRoute();
   const decks = await loadDecks();
   const playerId = getPlayerId();
-  const flags = await loadFeatureFlags();
 
   if (route === 'solo') {
     await renderSoloRoute(decks);
-    app.insertAdjacentHTML('beforeend', renderAnalyticsToggle(flags));
-    document.getElementById('analyticsOpt')?.addEventListener('change', (e) => setAnalyticsOptIn(e.target.checked));
     return;
   }
 
   if (route === 'host') {
-    app.innerHTML = renderModeSwitcher('host');
-    bindModeNav();
-    if (!flags.multiplayer) {
-      app.insertAdjacentHTML('beforeend', '<section class="card"><p>Multiplayer is temporarily disabled by feature flag.</p></section>');
-      return;
-    }
     renderHost(app, decks, ws, playerId);
     return;
   }
 
   if (route === 'join') {
-    app.innerHTML = renderModeSwitcher('join');
-    bindModeNav();
-    if (!flags.multiplayer) {
-      app.insertAdjacentHTML('beforeend', '<section class="card"><p>Multiplayer is temporarily disabled by feature flag.</p></section>');
-      return;
-    }
     renderJoin(app, ws, playerId);
     return;
   }
@@ -195,8 +149,7 @@ async function render() {
     return;
   }
 
-  app.innerHTML = `${renderModeSwitcher('solo')}<section class="card"><h2>Not found</h2><p>Use navigation tabs.</p></section>`;
-  bindModeNav();
+  app.innerHTML = '<section class="card"><h2>Not found</h2><p>Use navigation tabs.</p></section>';
 }
 
 onRouteChange(render);

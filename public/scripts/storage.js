@@ -4,7 +4,6 @@ const KEYS = {
   playerId: 'study.playerId',
   importedDecks: 'study.importedDecks',
   stats: 'study.stats',
-  analyticsOptIn: 'study.analyticsOptIn',
 };
 
 export function getPlayerId() {
@@ -48,20 +47,11 @@ export function updateDeckStats(deckId, updater) {
     streak: 0,
     bestStreak: 0,
     lastPlayedAt: null,
-    itemProgress: {},
   };
 
-  const next = updater({ ...current, itemProgress: { ...(current.itemProgress || {}) } }) || current;
+  const next = updater({ ...current }) || current;
   next.lastPlayedAt = Date.now();
   stats[deckId] = next;
   saveStats(stats);
   return next;
-}
-
-export function setAnalyticsOptIn(enabled) {
-  localStorage.setItem(KEYS.analyticsOptIn, enabled ? '1' : '0');
-}
-
-export function getAnalyticsOptIn() {
-  return localStorage.getItem(KEYS.analyticsOptIn) === '1';
 }
