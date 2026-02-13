@@ -8,6 +8,8 @@ export class WsClient {
     this.backoff = 600;
     this.maxBackoff = 8000;
     this.rejoinPayload = null;
+    this.pingTimer = null;
+    this.reconnectCount = 0;
   }
 
   on(event, cb) {
@@ -19,6 +21,19 @@ export class WsClient {
     (this.handlers.get(event) || []).forEach((cb) => cb(payload));
   }
 
+  startClientPing() {
+    clearInterval(this.pingTimer);
+    this.pingTimer = setInterval(() => {
+      const sentTs = Date.now();
+      this.send('ping', { sentTs });
+    }, 5000);
+  }
+
+  stopClientPing() {
+    clearInterval(this.pingTimer);
+    this.pingTimer = null;
+  }
+
   connect() {
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const url = `${proto}://${window.location.host}/ws`;
@@ -28,7 +43,8 @@ export class WsClient {
     this.ws.addEventListener('open', () => {
       log('ws.open');
       this.backoff = 600;
-      this.emit('connection_state', { connected: true });
+      this.emit('connection_state', { connected: true, reconnectCount: this.reconnectCount });
+      this.startClientPing();
       if (this.rejoinPayload) this.send('rejoin_room', this.rejoinPayload);
     });
 
@@ -39,14 +55,23 @@ export class WsClient {
       } catch {
         return;
       }
+
+      if (data.event === 'pong') {
+        const sentTs = Number(data.payload?.sentTs || 0);
+        const rttMs = sentTs ? Date.now() - sentTs : null;
+        this.emit('latency', { rttMs, serverTs: data.payload?.serverTs || null });
+      }
+
       log('ws.message', { event: data.event });
       this.emit(data.event, data.payload);
     });
 
     this.ws.addEventListener('close', () => {
       log('ws.close');
-      this.emit('connection_state', { connected: false });
+      this.stopClientPing();
+      this.emit('connection_state', { connected: false, reconnectCount: this.reconnectCount });
       if (this.manualClose) return;
+      this.reconnectCount += 1;
       const jitter = Math.floor(Math.random() * 200);
       const delay = this.backoff + jitter;
       setTimeout(() => this.connect(), delay);
@@ -71,6 +96,7 @@ export class WsClient {
 
   close() {
     this.manualClose = true;
+    this.stopClientPing();
     this.ws?.close();
   }
 }

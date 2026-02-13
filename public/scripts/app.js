@@ -16,6 +16,7 @@ const app = document.getElementById('app');
 const ws = new WsClient();
 ws.connect();
 ws.on('error', (p) => log('server.error', p));
+ws.on('latency', (p) => log('ws.latency', p));
 
 function launchMode(root, deck, mode) {
   const modeRoot = document.createElement('section');

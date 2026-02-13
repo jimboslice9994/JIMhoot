@@ -40,3 +40,9 @@ Optional metadata:
 - `tags` (pipe-delimited), `difficulty`
 
 Each row can generate one or more modes depending on fields present.
+
+## Household multiplayer performance tips
+- For lowest latency, run server on one home device and have everyone join `http://<host-lan-ip>:3000`.
+- Keep all devices on same Wi-Fi network and avoid guest-network isolation.
+- Host can use **Skip wait / Next** to advance phases faster in live games.
+- The app now includes client RTT logging and reconnect counters in host/player views.
