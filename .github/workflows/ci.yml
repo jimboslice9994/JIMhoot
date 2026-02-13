@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      LOAD_CLIENTS: 48
+      LOAD_ROOMS: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run check
+      - run: npm test
+      - run: npm run bench
+      - run: npm run bench:ws
+      - run: npm run load
