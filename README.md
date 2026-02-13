@@ -9,6 +9,7 @@ A local-first study app built with vanilla JS + Node + `ws`.
 - CSV upload (paste or file) that auto-generates available study modes per deck
 - Realtime host/join mode over WebSockets (optional)
 - Mobile on-screen debug console for troubleshooting
+- Mastery snapshot table (attempts, accuracy, best streak)
 
 ## Run
 ```bash

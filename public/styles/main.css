@@ -217,3 +217,16 @@ button:disabled {
   from { opacity: 0.5; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.stats-table th,
+.stats-table td {
+  border-bottom: 1px solid #334155;
+  padding: 0.45rem;
+  text-align: left;
+}

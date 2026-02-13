@@ -38,3 +38,20 @@ export function getStats() {
 export function saveStats(stats) {
   localStorage.setItem(KEYS.stats, JSON.stringify(stats));
 }
+
+export function updateDeckStats(deckId, updater) {
+  const stats = getStats();
+  const current = stats[deckId] || {
+    attempts: 0,
+    correct: 0,
+    streak: 0,
+    bestStreak: 0,
+    lastPlayedAt: null,
+  };
+
+  const next = updater({ ...current }) || current;
+  next.lastPlayedAt = Date.now();
+  stats[deckId] = next;
+  saveStats(stats);
+  return next;
+}

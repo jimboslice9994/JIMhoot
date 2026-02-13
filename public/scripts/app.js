@@ -5,7 +5,7 @@ import { renderFlashcards } from './flashcards.js';
 import { renderSoloQuiz } from './soloQuiz.js';
 import { renderFillBlank } from './fillBlank.js';
 import { parseAndImportCsv } from './csv.js';
-import { saveImportedDecks, getPlayerId } from './storage.js';
+import { saveImportedDecks, getPlayerId, getStats } from './storage.js';
 import { WsClient } from './wsClient.js';
 import { renderHost } from './multiplayerHost.js';
 import { renderJoin } from './multiplayerPlayer.js';
@@ -17,6 +17,28 @@ const ws = new WsClient();
 ws.connect();
 ws.on('error', (p) => log('server.error', p));
 ws.on('latency', (p) => log('ws.latency', p));
+
+function renderMasterySnapshot(decks) {
+  const stats = getStats();
+  const rows = decks
+    .map((deck) => {
+      const s = stats[deck.id];
+      if (!s || !s.attempts) return null;
+      const accuracy = Math.round((s.correct / s.attempts) * 100);
+      return `<tr><td>${deck.title}</td><td>${s.attempts}</td><td>${accuracy}%</td><td>${s.bestStreak || 0}</td></tr>`;
+    })
+    .filter(Boolean)
+    .join('');
+
+  if (!rows) {
+    return '<p class="muted">No study stats yet. Play a round to start tracking mastery.</p>';
+  }
+
+  return `<table class="stats-table">
+    <thead><tr><th>Deck</th><th>Attempts</th><th>Accuracy</th><th>Best streak</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
 
 function launchMode(root, deck, mode) {
   const modeRoot = document.createElement('section');
@@ -38,7 +60,6 @@ function launchMode(root, deck, mode) {
   }
   if (mode === 'fillBlank') {
     renderFillBlank(modeRoot, deck);
-    return;
   }
 }
 
@@ -51,6 +72,10 @@ async function renderSoloRoute(decks) {
       <label>Shuffle quiz questions<input id="solo-shuffle" type="checkbox" /></label>
     </div>
     <section id="deck-library" class="deck-library">${renderDeckLibrary(decks)}</section>
+  </section>
+  <section class="card">
+    <h2>Mastery Snapshot</h2>
+    ${renderMasterySnapshot(decks)}
   </section>`;
 
   const library = document.getElementById('deck-library');

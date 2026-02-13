@@ -1,4 +1,4 @@
-import { getStats, saveStats } from './storage.js';
+import { updateDeckStats } from './storage.js';
 import { shuffleArray } from './utils.js';
 
 export function renderSoloQuiz(root, deck, options = {}) {
@@ -20,11 +20,17 @@ export function renderSoloQuiz(root, deck, options = {}) {
   };
 
   function record(correct) {
-    const stats = getStats();
-    stats[deck.id] = stats[deck.id] || { attempts: 0, correct: 0 };
-    stats[deck.id].attempts += 1;
-    if (correct) stats[deck.id].correct += 1;
-    saveStats(stats);
+    updateDeckStats(deck.id, (s) => {
+      s.attempts += 1;
+      if (correct) {
+        s.correct += 1;
+        s.streak += 1;
+        s.bestStreak = Math.max(s.bestStreak || 0, s.streak);
+      } else {
+        s.streak = 0;
+      }
+      return s;
+    });
   }
 
   function stopTimer() {

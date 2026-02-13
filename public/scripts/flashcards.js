@@ -1,22 +1,29 @@
-import { getStats, saveStats } from './storage.js';
+import { updateDeckStats } from './storage.js';
 
 export function renderFlashcards(root, deck) {
-  const cards = deck?.modes?.flashcards || [];
-  if (!cards.length) {
+  const sourceCards = deck?.modes?.flashcards || [];
+  if (!sourceCards.length) {
     root.innerHTML = '<div class="card"><p>No flashcards available for this deck.</p></div>';
     return;
   }
 
   let idx = 0;
   let flipped = false;
+  let queue = [...sourceCards];
   const missed = [];
 
   function saveResult(correct) {
-    const stats = getStats();
-    stats[deck.id] = stats[deck.id] || { attempts: 0, correct: 0 };
-    stats[deck.id].attempts += 1;
-    if (correct) stats[deck.id].correct += 1;
-    saveStats(stats);
+    updateDeckStats(deck.id, (s) => {
+      s.attempts += 1;
+      if (correct) {
+        s.correct += 1;
+        s.streak += 1;
+        s.bestStreak = Math.max(s.bestStreak || 0, s.streak);
+      } else {
+        s.streak = 0;
+      }
+      return s;
+    });
   }
 
   root.innerHTML = `
@@ -44,13 +51,13 @@ export function renderFlashcards(root, deck) {
   const backEl = document.getElementById('fc-back');
 
   function drawCard() {
-    const card = cards[idx];
+    const card = queue[idx];
     if (!card) {
       root.innerHTML = '<div class="card"><h3>Done!</h3><p>Completed flashcards.</p></div>';
       return;
     }
     titleEl.textContent = deck.title;
-    progressEl.textContent = `Card ${idx + 1}/${cards.length}`;
+    progressEl.textContent = `Card ${idx + 1}/${queue.length}`;
     frontEl.textContent = card.front;
     backEl.textContent = card.back;
     flipped = false;
@@ -63,13 +70,15 @@ export function renderFlashcards(root, deck) {
   }
 
   function nextCard(correct) {
-    const card = cards[idx];
+    const card = queue[idx];
     saveResult(correct);
     if (!correct && card) missed.push(card);
     idx += 1;
 
-    if (idx >= cards.length && missed.length) {
-      cards.push(...missed.splice(0));
+    if (idx >= queue.length && missed.length) {
+      queue = [...missed];
+      missed.length = 0;
+      idx = 0;
     }
     drawCard();
   }
