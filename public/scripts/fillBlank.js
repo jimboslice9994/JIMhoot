@@ -1,5 +1,5 @@
 import { updateDeckStats } from './storage.js';
-import { evaluateFillBlank } from './learning.js';
+import { normalizeText } from './utils.js';
 
 export function renderFillBlank(root, deck) {
   const source = deck?.modes?.fillBlank || [];
@@ -12,31 +12,24 @@ export function renderFillBlank(root, deck) {
   let queue = [...source];
   const missed = [];
   let score = 0;
-  let asked = 0;
   let hintStep = 0;
 
-  function record(itemId, resultScore) {
+  function record(correct) {
     updateDeckStats(deck.id, (s) => {
       s.attempts += 1;
-      s.correct += resultScore;
-      if (resultScore >= 0.75) {
+      if (correct) {
+        s.correct += 1;
         s.streak += 1;
         s.bestStreak = Math.max(s.bestStreak || 0, s.streak);
       } else {
         s.streak = 0;
       }
-      const prev = s.itemProgress?.[itemId] || { attempts: 0, score: 0 };
-      s.itemProgress[itemId] = {
-        attempts: prev.attempts + 1,
-        score: Number((prev.score + resultScore).toFixed(2)),
-      };
       return s;
     });
   }
 
   function nextQuestion() {
     idx += 1;
-    asked += 1;
     hintStep = 0;
     if (idx >= queue.length && missed.length) {
       queue = [...missed];
@@ -59,9 +52,8 @@ export function renderFillBlank(root, deck) {
   function draw() {
     const item = queue[idx];
     if (!item) {
-      const totalAnswered = Math.max(asked, 1);
-      const accuracy = Math.round((score / totalAnswered) * 100);
-      root.innerHTML = `<div class="card"><h3>Fill-Blank Complete</h3><p>Score: ${score.toFixed(2)}/${asked}</p><p>Accuracy: ${accuracy}%</p></div>`;
+      const accuracy = queue.length ? Math.round((score / queue.length) * 100) : 0;
+      root.innerHTML = `<div class="card"><h3>Fill-Blank Complete</h3><p>Score: ${score}/${queue.length}</p><p>Accuracy: ${accuracy}%</p></div>`;
       return;
     }
 
@@ -75,7 +67,7 @@ export function renderFillBlank(root, deck) {
           <button id="fb-submit" type="button">Submit</button>
           <button id="fb-hint" type="button">Hint</button>
         </div>
-        <p id="fb-feedback" class="muted" aria-live="polite"></p>
+        <p id="fb-feedback" class="muted"></p>
         <button id="fb-next" class="hidden" type="button">Next</button>
       </div>
     `;
@@ -85,16 +77,15 @@ export function renderFillBlank(root, deck) {
     const nextBtn = document.getElementById('fb-next');
 
     function lockAndShow(userAnswer) {
-      const evalResult = evaluateFillBlank(userAnswer, item.answer, item.synonyms || []);
-      score += evalResult.score;
-      if (evalResult.score < 0.75) missed.push(item);
-
-      if (evalResult.status === 'exact') feedbackEl.textContent = `Correct. ${item.explanation || ''}`;
-      else if (evalResult.status === 'close') feedbackEl.textContent = `Close enough (+0.75). Expected: ${item.answer}. ${item.explanation || ''}`;
-      else if (evalResult.status === 'partial') feedbackEl.textContent = `Partial credit (+0.5). Expected: ${item.answer}. ${item.explanation || ''}`;
-      else feedbackEl.textContent = `Not quite. Answer: ${item.answer}. ${item.explanation || ''}`;
-
-      record(item.id, evalResult.score);
+      const correct = normalizeText(userAnswer) === normalizeText(item.answer);
+      if (correct) {
+        score += 1;
+        feedbackEl.textContent = `Correct. ${item.explanation || ''}`;
+      } else {
+        missed.push(item);
+        feedbackEl.textContent = `Not quite. Answer: ${item.answer}. ${item.explanation || ''}`;
+      }
+      record(correct);
       answerEl.disabled = true;
       document.getElementById('fb-submit').disabled = true;
       nextBtn.classList.remove('hidden');

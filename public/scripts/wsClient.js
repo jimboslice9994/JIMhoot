@@ -56,16 +56,6 @@ export class WsClient {
         return;
       }
 
-
-      if (data.event === 'session_info' && data.payload?.roomCode && data.payload?.playerId && data.payload?.reconnectKey) {
-        this.rejoinPayload = {
-          ...(this.rejoinPayload || {}),
-          roomCode: data.payload.roomCode,
-          playerId: data.payload.playerId,
-          reconnectKey: data.payload.reconnectKey,
-        };
-      }
-
       if (data.event === 'pong') {
         const sentTs = Number(data.payload?.sentTs || 0);
         const rttMs = sentTs ? Date.now() - sentTs : null;
@@ -101,7 +91,7 @@ export class WsClient {
   }
 
   setRejoinPayload(payload) {
-    this.rejoinPayload = { ...(this.rejoinPayload || {}), ...(payload || {}) };
+    this.rejoinPayload = payload;
   }
 
   close() {
