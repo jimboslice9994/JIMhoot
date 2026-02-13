@@ -32,7 +32,7 @@ function sendEvent(ws, event, payload) {
   ws.send(JSON.stringify({ event, payload, ts: Date.now() }));
 }
 
-function waitForEvent(ws, eventName, matcher = null, timeoutMs = 8000) {
+function waitForEvent(ws, eventName, matcher = null, timeoutMs = 4500) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       ws.off('message', onMessage);
@@ -56,7 +56,7 @@ function waitForEvent(ws, eventName, matcher = null, timeoutMs = 8000) {
 test.before(async () => {
   serverProc = spawn(process.execPath, ['server.js'], {
     env: { ...process.env, PORT: String(PORT), FEATURE_MULTIPLAYER: 'true' },
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   await waitForServer();
 });
