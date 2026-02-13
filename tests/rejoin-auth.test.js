@@ -3,14 +3,14 @@ const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const WebSocket = require('ws');
 
-const PORT = 3110;
+const PORT = 3114;
 const BASE_HTTP = `http://127.0.0.1:${PORT}`;
 const BASE_WS = `ws://127.0.0.1:${PORT}/ws`;
 let serverProc;
 
 async function waitForServer() {
-  const start = Date.now();
-  while (Date.now() - start < 10000) {
+  const started = Date.now();
+  while (Date.now() - started < 10000) {
     try {
       const res = await fetch(`${BASE_HTTP}/healthz`);
       if (res.ok) return;
@@ -65,22 +65,21 @@ test.after(() => {
   if (serverProc) serverProc.kill('SIGTERM');
 });
 
-test('player reconnects mid-question and receives question snapshot', async () => {
+test('rejoin requires reconnect token and blocks hijack attempts', async () => {
   const host = await connectWs();
   sendEvent(host, 'join_room', {
     role: 'host',
-    playerId: 'host_reconnect_1',
+    playerId: 'host_rejoin_guard',
     nickname: 'Host',
     deckId: 'bio_mastery',
     gameMode: 'classic',
-    timerSec: 20,
+    timerSec: 10,
   });
-  const hostLobby = await waitForEvent(host, 'lobby_state');
-  const roomCode = hostLobby.roomCode;
+  const lobby = await waitForEvent(host, 'lobby_state');
+  const roomCode = lobby.roomCode;
 
-  const playerId = 'player_reconnect_1';
   const player = await connectWs();
-  const playerSessionPromise = waitForEvent(player, 'session_info', (p) => p.roomCode === roomCode && p.playerId === playerId);
+  const playerId = 'player_rejoin_guard';
   sendEvent(player, 'join_room', {
     role: 'player',
     roomCode,
@@ -88,20 +87,13 @@ test('player reconnects mid-question and receives question snapshot', async () =
     nickname: 'Player',
   });
   await waitForEvent(player, 'lobby_state', (p) => p.roomCode === roomCode);
-  const playerSession = await playerSessionPromise;
 
-  sendEvent(host, 'start_game', { roomCode, playerId: 'host_reconnect_1' });
-  await waitForEvent(player, 'question', (p) => p.roomCode === roomCode);
+  const attacker = await connectWs();
+  sendEvent(attacker, 'rejoin_room', { roomCode, playerId, nickname: 'Evil', reconnectKey: 'badtoken_12345' });
+  const err = await waitForEvent(attacker, 'error');
+  assert.equal(err.code, 'UNAUTHORIZED');
 
+  attacker.close();
   player.close();
-  await new Promise((r) => setTimeout(r, 180));
-
-  const rejoin = await connectWs();
-  sendEvent(rejoin, 'rejoin_room', { roomCode, playerId, nickname: 'Player', reconnectKey: playerSession.reconnectKey });
-  const q = await waitForEvent(rejoin, 'question', (p) => p.roomCode === roomCode);
-  assert.equal(q.roomCode, roomCode);
-  assert.equal(typeof q.questionInstanceId, 'string');
-
-  rejoin.close();
   host.close();
 });
