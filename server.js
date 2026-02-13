@@ -451,6 +451,48 @@ function normalizeDeckFromId(deckId) {
   return deckCatalog.get(id) || null;
 }
 
+
+function normalizeImportedQuizDeck(rawDeck, fallbackDeckId = '') {
+  if (!rawDeck || typeof rawDeck !== 'object') return null;
+  const deckId = String(rawDeck.id || fallbackDeckId || '').trim();
+  const title = String(rawDeck.title || '').trim() || 'Imported Quiz Deck';
+  const sourceQuiz = Array.isArray(rawDeck?.modes?.quiz) ? rawDeck.modes.quiz : [];
+  if (!deckId || !sourceQuiz.length) return null;
+
+  const items = [];
+  for (const item of sourceQuiz) {
+    const question = String(item?.question || '').trim();
+    const choices = item?.choices || {};
+    const correct = String(item?.correctChoice || item?.correct || '').toUpperCase().trim();
+    if (!question || !choices.A || !choices.B || !choices.C || !choices.D) continue;
+    if (!['A', 'B', 'C', 'D'].includes(correct)) continue;
+
+    items.push({
+      id: String(item.id || makeId('q')).slice(0, 80),
+      question: question.slice(0, 500),
+      choices: {
+        A: String(choices.A).slice(0, 240),
+        B: String(choices.B).slice(0, 240),
+        C: String(choices.C).slice(0, 240),
+        D: String(choices.D).slice(0, 240),
+      },
+      correct,
+      explanation: String(item?.explanation || '').slice(0, 500),
+      timeLimitSec: Math.max(5, Math.min(120, Number(item?.timeLimitSec) || 10)),
+    });
+
+    if (items.length >= 120) break;
+  }
+
+  if (!items.length) return null;
+  return {
+    id: deckId.slice(0, 80),
+    title: title.slice(0, 120),
+    type: 'mcq',
+    items,
+  };
+}
+
 function clearRoomTimers(room) {
   clearTimeout(room.phaseTimer);
   room.phaseTimer = null;
@@ -634,8 +676,12 @@ function handleJoin(ws, payload) {
   if (!nickname) return emitError(ws, 'VALIDATION_ERROR', 'Nickname required');
 
   if (role === 'host') {
-    const deck = normalizeDeckFromId(payload.deckId);
-    if (!deck) return emitError(ws, 'VALIDATION_ERROR', 'Host must provide valid deckId');
+    let deck = normalizeDeckFromId(payload.deckId);
+    if (!deck) {
+      deck = normalizeImportedQuizDeck(payload.importedDeck, payload.deckId);
+    }
+    if (!deck) return emitError(ws, 'VALIDATION_ERROR', 'Host must provide valid quiz deck');
+
     const hostPlayer = { playerId, nickname, role: 'host', score: 0, ws, connectedAt: Date.now() };
     const room = createRoom(hostPlayer, deck, { gameMode: payload.gameMode, timerSec: payload.timerSec });
     attachPlayerToSocket(hostPlayer, ws, room.code);

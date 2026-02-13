@@ -8,6 +8,7 @@ PulseLearn is a local-first learning app inspired by modern study/game tools wit
 ## Current status (Milestone 2, chunk 1)
 - ✅ Baseline mode shell + routing (`#/solo`, `#/import`, `#/host`, `#/join`)
 - ✅ Deck import (CSV + JSON) with validation and row-level reporting
+- ✅ Imported quiz decks can be hosted directly in multiplayer rooms
 - ✅ Flashcards with SM-2-style scheduling logic
 - ✅ Fill-in with normalization + Levenshtein-based close/partial scoring
 - ✅ Multiplayer scaffold + lobby + event contract endpoint

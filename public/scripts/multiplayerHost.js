@@ -29,7 +29,10 @@ export function renderHost(root, decks, ws, playerId) {
     if (!deck) return;
     const gameMode = document.getElementById('hostMode')?.value || 'classic';
     const timerSec = Number(document.getElementById('hostTimer')?.value) || 10;
-    ws.send('join_room', { role: 'host', playerId, nickname, deckId: deck.id, gameMode, timerSec });
+    const importedDeck = deck.source === 'imported'
+      ? { id: deck.id, title: deck.title, modes: { quiz: deck.modes.quiz } }
+      : undefined;
+    ws.send('join_room', { role: 'host', playerId, nickname, deckId: deck.id, importedDeck, gameMode, timerSec });
   });
 
   document.getElementById('hostStart')?.addEventListener('click', () => {
