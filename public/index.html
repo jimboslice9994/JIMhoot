@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Household Study Platform</title>
+    <link rel="stylesheet" href="/styles/main.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>Household Study Platform</h1>
+      <nav>
+        <a href="#/solo">Study</a>
+        <a href="#/import">Import CSV</a>
+        <a href="#/host">Host</a>
+        <a href="#/join">Join</a>
+      </nav>
+    </header>
+
+    <main id="app" class="app"></main>
+
+    <button id="debug-toggle" class="debug-toggle" type="button">Debug</button>
+    <section id="debug-console" class="debug-console hidden" aria-live="polite">
+      <div class="debug-head">
+        <strong>Debug Console</strong>
+        <button id="debug-clear" type="button">Clear</button>
+      </div>
+      <pre id="debug-log"></pre>
+    </section>
+
+    <script type="module" src="/scripts/app.js"></script>
+  </body>
+</html>
