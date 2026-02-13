@@ -1,0 +1,232 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --card: #1e293b;
+  --muted: #94a3b8;
+  --text: #e2e8f0;
+  --accent: #22d3ee;
+  --success: #22c55e;
+  --danger: #ef4444;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  background: #0b1220;
+  padding: 0.75rem;
+  border-bottom: 1px solid #334155;
+  z-index: 50;
+}
+
+.topbar h1 {
+  margin: 0 0 .5rem;
+  font-size: 1.1rem;
+}
+
+.topbar nav {
+  display: flex;
+  gap: .8rem;
+  flex-wrap: wrap;
+}
+
+.topbar a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.app {
+  padding: 1rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid #334155;
+  border-radius: .75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+input, select, textarea, button {
+  width: 100%;
+  margin: .3rem 0 .7rem;
+  padding: .65rem;
+  border-radius: .55rem;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: var(--text);
+}
+
+button {
+  background: #0891b2;
+  border: none;
+  color: #06202a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+}
+
+.hidden { display: none !important; }
+
+.deck-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: .8rem;
+}
+
+.deck-tile {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: .65rem;
+  padding: .8rem;
+}
+
+.deck-tile h3 {
+  margin: 0 0 .25rem;
+}
+
+.mode-buttons {
+  display: grid;
+  gap: .45rem;
+}
+
+.mode-launch {
+  background: #155e75;
+  color: #d9f9ff;
+}
+
+.flashcard-shell {
+  perspective: 1200px;
+  margin: .75rem 0;
+}
+
+.flashcard {
+  position: relative;
+  min-height: 180px;
+  border-radius: .7rem;
+  transform-style: preserve-3d;
+  transition: transform 280ms ease;
+  will-change: transform;
+  cursor: pointer;
+}
+
+.flashcard.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 1rem;
+  border-radius: .7rem;
+  border: 1px solid #334155;
+  background: #020617;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+  background: #082f49;
+}
+
+.debug-toggle {
+  position: fixed;
+  right: .8rem;
+  bottom: .8rem;
+  width: auto;
+  z-index: 1000;
+}
+
+.debug-console {
+  position: fixed;
+  left: .5rem;
+  right: .5rem;
+  bottom: 3.8rem;
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: .6rem;
+  z-index: 1000;
+  max-height: 42vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.debug-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .5rem;
+  border-bottom: 1px solid #334155;
+}
+
+#debug-log {
+  margin: 0;
+  padding: .6rem;
+  overflow: auto;
+  font-size: .74rem;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 640px) {
+  .row,
+  .choices {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fade-in {
+  animation: fadeSlideIn 180ms ease-out;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0.5; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.stats-table th,
+.stats-table td {
+  border-bottom: 1px solid #334155;
+  padding: 0.45rem;
+  text-align: left;
+}
