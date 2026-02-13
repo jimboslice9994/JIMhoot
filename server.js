@@ -181,7 +181,7 @@ function lobbyPayload(room) {
     host: host ? { playerId: host.playerId, nickname: host.nickname } : null,
     players: [...room.players.values()].map(playerPublic),
     deck: room.deck ? { id: room.deck.id, title: room.deck.title, count: room.deck.items.length } : null,
-  };
+};
 }
 
 function emitError(ws, code, message, details = {}) {
