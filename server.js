@@ -440,6 +440,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, {
         'content-type': MIME[ext] || 'application/octet-stream',
         'cache-control': 'no-store',
+        'x-content-type-options': 'nosniff',
       });
       res.end(buf);
     });

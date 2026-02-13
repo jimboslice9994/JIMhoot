@@ -1,32 +1,22 @@
 {
-  "id": "mcq_geo_capitals",
-  "title": "World Capitals",
-  "type": "mcq",
+  "id": "sample_quiz_only",
+  "title": "Sample Quiz",
   "source": "bundled",
-  "version": 1,
-  "createdAt": 1735689600000,
-  "updatedAt": 1735689600000,
-  "tags": ["geography"],
-  "items": [
-    {
-      "id": "q1",
-      "question": "Capital of France?",
-      "choices": { "A": "Paris", "B": "Rome", "C": "Berlin", "D": "Madrid" },
-      "correct": "A",
-      "explanation": "Paris is France's capital.",
-      "tags": ["europe"],
-      "imageUrl": "",
-      "timeLimitSec": 15
-    },
-    {
-      "id": "q2",
-      "question": "Capital of Japan?",
-      "choices": { "A": "Beijing", "B": "Seoul", "C": "Tokyo", "D": "Kyoto" },
-      "correct": "C",
-      "explanation": "Tokyo is the current capital of Japan.",
-      "tags": ["asia"],
-      "imageUrl": "",
-      "timeLimitSec": 20
-    }
-  ]
+  "tags": ["sample"],
+  "modes": {
+    "flashcards": [],
+    "quiz": [
+      {
+        "id": "quiz_sample_1",
+        "question": "2 + 2 = ?",
+        "choices": { "A": "3", "B": "4", "C": "5", "D": "6" },
+        "correctChoice": "B",
+        "explanation": "Basic arithmetic addition.",
+        "tags": ["math"],
+        "difficulty": "easy",
+        "timeLimitSec": 10
+      }
+    ],
+    "fillBlank": []
+  }
 }

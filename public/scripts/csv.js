@@ -29,6 +29,7 @@ function parseCsvRFC4180(input) {
     if (ch === '\r') continue;
     field += ch;
   }
+
   row.push(field);
   rows.push(row);
   return rows.filter((r) => r.some((v) => String(v).trim() !== ''));
@@ -38,87 +39,130 @@ function tagsSplit(value) {
   return String(value || '').split('|').map((v) => v.trim()).filter(Boolean);
 }
 
-export function parseAndImportCsv(csvText, deckType) {
-  log('csv.parse.start', { deckType, len: csvText.length });
+function rowToObject(header, row) {
+  const obj = {};
+  header.forEach((key, idx) => {
+    obj[key] = String(row[idx] ?? '').trim();
+  });
+  return obj;
+}
+
+function validateHeaders(headerSet) {
+  const required = ['deck_name'];
+  const missing = required.filter((h) => !headerSet.has(h));
+  return missing;
+}
+
+function validChoice(value) {
+  return ['A', 'B', 'C', 'D'].includes(String(value || '').toUpperCase());
+}
+
+export function parseAndImportCsv(csvText) {
+  log('csv.parse.start', { len: csvText.length });
   const rows = parseCsvRFC4180(csvText);
-  if (rows.length < 2) return { ok: false, message: 'CSV must include header and at least one row', rowResults: [] };
+
+  if (rows.length < 2) {
+    return { ok: false, message: 'CSV must include header and at least one row', rowResults: [] };
+  }
 
   const header = rows[0].map((h) => String(h).trim().toLowerCase());
+  const missingHeaders = validateHeaders(new Set(header));
+  if (missingHeaders.length) {
+    return { ok: false, message: `Missing required headers: ${missingHeaders.join(', ')}`, rowResults: [] };
+  }
+
   const rowResults = [];
-  const items = [];
-  let deckId = '';
-  let deckTitle = '';
+  const decksByName = new Map();
+
+  function getDeck(deckName) {
+    const normalized = String(deckName || '').trim();
+    if (!decksByName.has(normalized)) {
+      decksByName.set(normalized, {
+        id: uid('deck'),
+        title: normalized,
+        source: 'imported',
+        tags: [],
+        modes: { flashcards: [], quiz: [], fillBlank: [] },
+      });
+    }
+    return decksByName.get(normalized);
+  }
 
   for (let i = 1; i < rows.length; i += 1) {
-    const line = rows[i];
     const rowNum = i + 1;
-    const obj = {};
-    header.forEach((h, idx) => { obj[h] = String(line[idx] ?? '').trim(); });
+    const obj = rowToObject(header, rows[i]);
 
-    if (!deckId) deckId = obj.deck_id;
-    if (!deckTitle) deckTitle = obj.deck_title;
-
-    if (!obj.deck_id || !obj.deck_title) {
-      rowResults.push({ row: rowNum, status: 'skipped', reason: 'Missing deck_id or deck_title' });
-      continue;
-    }
-    if (obj.deck_id !== deckId || obj.deck_title !== deckTitle) {
-      rowResults.push({ row: rowNum, status: 'skipped', reason: 'Mixed deck_id/deck_title in file' });
+    if (!obj.deck_name) {
+      rowResults.push({ row: rowNum, status: 'skipped', reason: 'Missing deck_name' });
       continue;
     }
 
-    if (deckType === 'flashcards') {
-      if (!obj.front || !obj.back) {
-        rowResults.push({ row: rowNum, status: 'skipped', reason: 'Missing front or back' });
-        continue;
-      }
-      items.push({ id: uid('fc'), front: obj.front, back: obj.back, tags: tagsSplit(obj.tags) });
-      rowResults.push({ row: rowNum, status: 'imported' });
-      continue;
+    const deck = getDeck(obj.deck_name);
+    const tags = tagsSplit(obj.tags);
+    let produced = 0;
+
+    const hasQuizFields = obj.question && obj.choice_a && obj.choice_b && obj.choice_c && obj.choice_d && validChoice(obj.correct_choice);
+    if (hasQuizFields) {
+      deck.modes.quiz.push({
+        id: uid('quiz'),
+        question: obj.question,
+        choices: { A: obj.choice_a, B: obj.choice_b, C: obj.choice_c, D: obj.choice_d },
+        correctChoice: obj.correct_choice.toUpperCase(),
+        explanation: obj.answer_explanation || '',
+        tags,
+        difficulty: obj.difficulty || '',
+        timeLimitSec: 10,
+      });
+      produced += 1;
     }
 
-    const correct = String(obj.correct || '').toUpperCase();
-    const time = Math.max(5, Math.min(120, Number(obj.time_limit_sec) || 20));
-    if (!obj.question || !obj.a || !obj.b || !obj.c || !obj.d || !['A', 'B', 'C', 'D'].includes(correct)) {
-      rowResults.push({ row: rowNum, status: 'skipped', reason: 'Invalid MCQ row (question/options/correct)' });
-      continue;
+    const hasFlashFields = obj.flashcard_front && obj.flashcard_back;
+    if (hasFlashFields) {
+      deck.modes.flashcards.push({
+        id: uid('fc'),
+        front: obj.flashcard_front,
+        back: obj.flashcard_back,
+        explanation: obj.answer_explanation || '',
+        tags,
+        difficulty: obj.difficulty || '',
+      });
+      produced += 1;
     }
-    items.push({
-      id: uid('mcq'),
-      question: obj.question,
-      choices: { A: obj.a, B: obj.b, C: obj.c, D: obj.d },
-      correct,
-      explanation: obj.explanation || '',
-      tags: tagsSplit(obj.tags),
-      imageUrl: obj.image_url || '',
-      timeLimitSec: time,
-    });
-    rowResults.push({ row: rowNum, status: 'imported' });
+
+    const hasFillFields = obj.fill_blank_sentence && obj.fill_blank_answer;
+    if (hasFillFields) {
+      deck.modes.fillBlank.push({
+        id: uid('fb'),
+        sentence: obj.fill_blank_sentence,
+        answer: obj.fill_blank_answer,
+        explanation: obj.answer_explanation || '',
+        tags,
+        difficulty: obj.difficulty || '',
+      });
+      produced += 1;
+    }
+
+    if (!produced) {
+      rowResults.push({ row: rowNum, status: 'skipped', reason: 'Row does not contain valid quiz/flashcard/fill_blank fields' });
+    } else {
+      rowResults.push({ row: rowNum, status: 'imported', generatedModes: produced });
+    }
   }
+
+  const decks = [...decksByName.values()].filter((deck) => (
+    deck.modes.flashcards.length || deck.modes.quiz.length || deck.modes.fillBlank.length
+  ));
 
   const importedRows = rowResults.filter((r) => r.status === 'imported').length;
   const report = {
-    ok: importedRows > 0,
-    deckType,
-    deckId: deckId || uid('deck'),
-    deckTitle: deckTitle || 'Imported deck',
+    ok: decks.length > 0,
+    decks,
     totalRows: rows.length - 1,
     importedRows,
     skippedRows: rowResults.length - importedRows,
     rowResults,
-    deck: {
-      id: deckId || uid('deck'),
-      title: deckTitle || 'Imported deck',
-      type: deckType,
-      source: 'imported',
-      version: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      tags: [],
-      items,
-    },
   };
 
-  log('csv.parse.done', { importedRows, skipped: report.skippedRows });
+  log('csv.parse.done', { decks: decks.length, importedRows, skippedRows: report.skippedRows });
   return report;
 }

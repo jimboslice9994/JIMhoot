@@ -1,12 +1,13 @@
 {
   "name": "jimhoot-study-platform",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Private household study platform with solo and realtime quiz modes",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "check": "node --check server.js && node --check public/scripts/app.js"
   },
   "dependencies": {
     "ws": "^8.18.0"

@@ -10,7 +10,14 @@ export class WsClient {
     this.rejoinPayload = null;
   }
 
-  on(event, cb) { this.handlers.set(event, cb); }
+  on(event, cb) {
+    if (!this.handlers.has(event)) this.handlers.set(event, []);
+    this.handlers.get(event).push(cb);
+  }
+
+  emit(event, payload) {
+    (this.handlers.get(event) || []).forEach((cb) => cb(payload));
+  }
 
   connect() {
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -21,21 +28,24 @@ export class WsClient {
     this.ws.addEventListener('open', () => {
       log('ws.open');
       this.backoff = 600;
-      if (this.rejoinPayload) {
-        this.send('rejoin_room', this.rejoinPayload);
-      }
+      this.emit('connection_state', { connected: true });
+      if (this.rejoinPayload) this.send('rejoin_room', this.rejoinPayload);
     });
 
     this.ws.addEventListener('message', (evt) => {
       let data;
-      try { data = JSON.parse(evt.data); } catch { return; }
+      try {
+        data = JSON.parse(evt.data);
+      } catch {
+        return;
+      }
       log('ws.message', { event: data.event });
-      const handler = this.handlers.get(data.event);
-      if (handler) handler(data.payload);
+      this.emit(data.event, data.payload);
     });
 
     this.ws.addEventListener('close', () => {
       log('ws.close');
+      this.emit('connection_state', { connected: false });
       if (this.manualClose) return;
       const jitter = Math.floor(Math.random() * 200);
       const delay = this.backoff + jitter;
@@ -55,7 +65,9 @@ export class WsClient {
     return true;
   }
 
-  setRejoinPayload(payload) { this.rejoinPayload = payload; }
+  setRejoinPayload(payload) {
+    this.rejoinPayload = payload;
+  }
 
   close() {
     this.manualClose = true;

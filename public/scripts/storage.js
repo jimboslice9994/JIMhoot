@@ -19,11 +19,22 @@ export function getImportedDecks() {
 }
 
 export function saveImportedDeck(deck) {
-  const decks = getImportedDecks();
-  const idx = decks.findIndex((d) => d.id === deck.id);
-  if (idx >= 0) decks[idx] = deck; else decks.push(deck);
-  localStorage.setItem(KEYS.importedDecks, JSON.stringify(decks));
+  saveImportedDecks([deck]);
 }
 
-export function getStats() { return safeJsonParse(localStorage.getItem(KEYS.stats) || '{}', {}); }
-export function saveStats(stats) { localStorage.setItem(KEYS.stats, JSON.stringify(stats)); }
+export function saveImportedDecks(newDecks) {
+  const current = getImportedDecks();
+  const byId = new Map(current.map((deck) => [deck.id, deck]));
+  newDecks.forEach((deck) => {
+    if (deck?.id) byId.set(deck.id, deck);
+  });
+  localStorage.setItem(KEYS.importedDecks, JSON.stringify([...byId.values()]));
+}
+
+export function getStats() {
+  return safeJsonParse(localStorage.getItem(KEYS.stats) || '{}', {});
+}
+
+export function saveStats(stats) {
+  localStorage.setItem(KEYS.stats, JSON.stringify(stats));
+}

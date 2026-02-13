@@ -1,14 +1,20 @@
 {
-  "id": "fc_bio_basics",
-  "title": "Biology Basics",
-  "type": "flashcards",
+  "id": "sample_flashcards_only",
+  "title": "Sample Flashcards",
   "source": "bundled",
-  "version": 1,
-  "createdAt": 1735689600000,
-  "updatedAt": 1735689600000,
-  "tags": ["biology"],
-  "items": [
-    { "id": "fc1", "front": "Powerhouse of the cell?", "back": "Mitochondria", "tags": ["cells"] },
-    { "id": "fc2", "front": "Genetic material is stored in?", "back": "DNA", "tags": ["genetics"] }
-  ]
+  "tags": ["sample"],
+  "modes": {
+    "flashcards": [
+      {
+        "id": "fc_sample_1",
+        "front": "HTTP stands for?",
+        "back": "HyperText Transfer Protocol",
+        "explanation": "Core protocol for web communication.",
+        "tags": ["web"],
+        "difficulty": "easy"
+      }
+    ],
+    "quiz": [],
+    "fillBlank": []
+  }
 }
