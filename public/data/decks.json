@@ -1,0 +1,84 @@
+{
+  "decks": [
+    {
+      "id": "bio_mastery",
+      "title": "Biology Foundations",
+      "source": "bundled",
+      "tags": ["biology"],
+      "modes": {
+        "flashcards": [
+          {
+            "id": "fc1",
+            "front": "Powerhouse of the cell?",
+            "back": "Mitochondria",
+            "explanation": "Mitochondria generate ATP through cellular respiration.",
+            "tags": ["cells"],
+            "difficulty": "easy"
+          },
+          {
+            "id": "fc2",
+            "front": "Where is DNA primarily stored?",
+            "back": "In the nucleus",
+            "explanation": "In eukaryotic cells, most DNA is in the nucleus.",
+            "tags": ["genetics"],
+            "difficulty": "easy"
+          }
+        ],
+        "quiz": [
+          {
+            "id": "q1",
+            "question": "What controls entry and exit of materials in a cell?",
+            "choices": { "A": "Cell membrane", "B": "Ribosome", "C": "Mitochondria", "D": "Golgi body" },
+            "correctChoice": "A",
+            "explanation": "The cell membrane regulates transport.",
+            "tags": ["cells"],
+            "difficulty": "medium",
+            "timeLimitSec": 10
+          }
+        ],
+        "fillBlank": [
+          {
+            "id": "fb1",
+            "sentence": "_____ is the study of living organisms.",
+            "answer": "Biology",
+            "explanation": "Biology covers life and living systems.",
+            "tags": ["basics"],
+            "difficulty": "easy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "geo_quickfire",
+      "title": "World Capitals Quickfire",
+      "source": "bundled",
+      "tags": ["geography"],
+      "modes": {
+        "flashcards": [],
+        "quiz": [
+          {
+            "id": "gq1",
+            "question": "Capital of France?",
+            "choices": { "A": "Paris", "B": "Rome", "C": "Berlin", "D": "Madrid" },
+            "correctChoice": "A",
+            "explanation": "Paris is the capital city of France.",
+            "tags": ["europe"],
+            "difficulty": "easy",
+            "timeLimitSec": 12
+          },
+          {
+            "id": "gq2",
+            "question": "Capital of Japan?",
+            "choices": { "A": "Kyoto", "B": "Seoul", "C": "Tokyo", "D": "Osaka" },
+            "correctChoice": "C",
+            "explanation": "Tokyo is Japan's current capital.",
+            "tags": ["asia"],
+            "difficulty": "easy",
+            "timeLimitSec": 12
+          }
+        ],
+        "fillBlank": []
+      }
+    }
+  ]
+}

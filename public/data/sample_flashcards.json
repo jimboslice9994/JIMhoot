@@ -1,0 +1,20 @@
+{
+  "id": "sample_flashcards_only",
+  "title": "Sample Flashcards",
+  "source": "bundled",
+  "tags": ["sample"],
+  "modes": {
+    "flashcards": [
+      {
+        "id": "fc_sample_1",
+        "front": "HTTP stands for?",
+        "back": "HyperText Transfer Protocol",
+        "explanation": "Core protocol for web communication.",
+        "tags": ["web"],
+        "difficulty": "easy"
+      }
+    ],
+    "quiz": [],
+    "fillBlank": []
+  }
+}
