@@ -1,12 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
-let WebSocket;
-try {
-  WebSocket = require('ws');
-} catch (err) {
-  if (err?.code !== 'MODULE_NOT_FOUND') throw err;
-}
+const WebSocket = require('ws');
 
 const PORT = 3110;
 const BASE_HTTP = `http://127.0.0.1:${PORT}`;
@@ -37,7 +32,7 @@ function sendEvent(ws, event, payload) {
   ws.send(JSON.stringify({ event, payload, ts: Date.now() }));
 }
 
-function waitForEvent(ws, eventName, matcher = null, timeoutMs = 8000) {
+function waitForEvent(ws, eventName, matcher = null, timeoutMs = 4500) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       ws.off('message', onMessage);
@@ -58,14 +53,10 @@ function waitForEvent(ws, eventName, matcher = null, timeoutMs = 8000) {
   });
 }
 
-if (!WebSocket) {
-  test('requires ws dependency', { skip: 'ws package not installed in environment' }, () => {});
-} else {
-
 test.before(async () => {
   serverProc = spawn(process.execPath, ['server.js'], {
     env: { ...process.env, PORT: String(PORT), FEATURE_MULTIPLAYER: 'true' },
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   await waitForServer();
 });
@@ -114,4 +105,3 @@ test('player reconnects mid-question and receives question snapshot', async () =
   rejoin.close();
   host.close();
 });
-}

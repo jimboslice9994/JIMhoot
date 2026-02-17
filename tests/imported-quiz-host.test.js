@@ -1,12 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
-let WebSocket;
-try {
-  WebSocket = require('ws');
-} catch (err) {
-  if (err?.code !== 'MODULE_NOT_FOUND') throw err;
-}
+const WebSocket = require('ws');
 
 const PORT = 3112;
 const BASE_HTTP = `http://127.0.0.1:${PORT}`;
@@ -58,10 +53,6 @@ function waitForEvent(ws, eventName, matcher = null, timeoutMs = 4500) {
   });
 }
 
-if (!WebSocket) {
-  test('requires ws dependency', { skip: 'ws package not installed in environment' }, () => {});
-} else {
-
 test.before(async () => {
   serverProc = spawn(process.execPath, ['server.js'], {
     env: { ...process.env, PORT: String(PORT), FEATURE_MULTIPLAYER: 'true' },
@@ -111,4 +102,3 @@ test('host can create and start room using imported quiz deck payload', async ()
 
   host.close();
 });
-}

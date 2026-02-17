@@ -17,8 +17,7 @@ jobs:
           node-version: '20'
       - run: npm install
       - run: npm run check
-      - run: node -e "const p=require('./package.json'); if(!p.scripts || !p.scripts.test){throw new Error('Missing scripts.test in package.json')}"
-      - run: npm run test
+      - run: npm test
       - run: npm run bench
       - run: npm run bench:ws
       - run: npm run load

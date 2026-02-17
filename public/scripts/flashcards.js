@@ -1,13 +1,4 @@
 import { updateDeckStats } from './storage.js';
-import { sm2Schedule } from './learning.js';
-
-function sortByDue(cards, deckStats) {
-  return [...cards].sort((a, b) => {
-    const aDue = deckStats?.itemProgress?.[a.id]?.dueAt || 0;
-    const bDue = deckStats?.itemProgress?.[b.id]?.dueAt || 0;
-    return aDue - bDue;
-  });
-}
 
 export function renderFlashcards(root, deck) {
   const sourceCards = deck?.modes?.flashcards || [];
@@ -21,8 +12,7 @@ export function renderFlashcards(root, deck) {
   let queue = [...sourceCards];
   const missed = [];
 
-  function saveResult(cardId, correct) {
-    let updatedStats = null;
+  function saveResult(correct) {
     updateDeckStats(deck.id, (s) => {
       s.attempts += 1;
       if (correct) {
@@ -32,13 +22,8 @@ export function renderFlashcards(root, deck) {
       } else {
         s.streak = 0;
       }
-      const prev = s.itemProgress?.[cardId] || {};
-      const schedule = sm2Schedule(prev, correct ? 4 : 2);
-      s.itemProgress[cardId] = { ...prev, ...schedule };
-      updatedStats = s;
       return s;
     });
-    queue = sortByDue(queue, updatedStats);
   }
 
   root.innerHTML = `
@@ -86,9 +71,8 @@ export function renderFlashcards(root, deck) {
 
   function nextCard(correct) {
     const card = queue[idx];
-    if (!card) return;
-    saveResult(card.id, correct);
-    if (!correct) missed.push(card);
+    saveResult(correct);
+    if (!correct && card) missed.push(card);
     idx += 1;
 
     if (idx >= queue.length && missed.length) {

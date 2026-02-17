@@ -1,12 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
-let WebSocket;
-try {
-  WebSocket = require('ws');
-} catch (err) {
-  if (err?.code !== 'MODULE_NOT_FOUND') throw err;
-}
+const WebSocket = require('ws');
 
 const PORT = 3106;
 const BASE_HTTP = `http://127.0.0.1:${PORT}`;
@@ -61,10 +56,6 @@ function waitForEvent(ws, eventName, timeoutMs = 4000) {
   });
 }
 
-if (!WebSocket) {
-  test('requires ws dependency', { skip: 'ws package not installed in environment' }, () => {});
-} else {
-
 test.before(async () => {
   serverProc = spawn(process.execPath, ['server.js'], {
     env: { ...process.env, PORT: String(PORT), FEATURE_MULTIPLAYER: 'true' },
@@ -110,4 +101,3 @@ test('player socket cannot impersonate host to start game', async () => {
   hostWs.close();
   playerWs.close();
 });
-}

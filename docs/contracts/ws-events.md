@@ -2,14 +2,13 @@
 
 ## Client -> Server
 - `join_room` `{ role, playerId, nickname, roomCode?, deckId?, gameMode?, timerSec? }`
-- `rejoin_room` `{ roomCode, playerId, reconnectKey, nickname? }`
+- `rejoin_room` `{ roomCode, playerId, nickname? }`
 - `start_game` `{ roomCode, playerId }`
 - `submit_answer` `{ roomCode, playerId, questionInstanceId, choice }`
 - `next_question` `{ roomCode, playerId }`
 - `ping` `{ sentTs }`
 
 ## Server -> Client
-- `session_info` `{ roomCode, playerId, reconnectKey }`
 - `lobby_state`
 - `question`
 - `answer_ack`

@@ -1,23 +1,14 @@
-export function roomCodeFromHash(hashValue) {
-  const hash = String(hashValue || window.location.hash || '');
-  const query = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-  const params = new URLSearchParams(query);
-  return String(params.get('room') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
-}
-
 import { sanitizeNickname } from './utils.js';
 
 export function renderJoin(root, ws, playerId) {
-  const prefilledRoom = roomCodeFromHash(window.location.hash);
-
   root.innerHTML = `<section class="card">
     <h2>Join Game</h2>
     <p id="joinWsState" class="muted">Connecting WebSocket…</p>
     <p id="joinLatency" class="muted">RTT: -- ms</p>
-    <label>Room code</label><input id="joinRoom" maxlength="5" value="${prefilledRoom}" />
+    <label>Room code</label><input id="joinRoom" maxlength="5" />
     <label>Nickname</label><input id="joinNick" />
     <button id="joinBtn" type="button">Join</button>
-    <p id="joinState" class="muted" aria-live="polite"></p>
+    <p id="joinState" class="muted"></p>
   </section>
   <section id="answerCard" class="card hidden">
     <h3 id="qTitle">Question</h3>
@@ -28,19 +19,12 @@ export function renderJoin(root, ws, playerId) {
       <button data-choice="C" type="button">C</button>
       <button data-choice="D" type="button">D</button>
     </div>
-    <p id="ack" class="muted" aria-live="polite"></p>
+    <p id="ack" class="muted"></p>
   </section>`;
 
   let roomCode = '';
   let questionInstanceId = '';
   let timer = null;
-
-  const submitJoin = () => {
-    roomCode = String(document.getElementById('joinRoom')?.value || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
-    const nickname = sanitizeNickname(document.getElementById('joinNick')?.value) || 'Player';
-    ws.send('join_room', { role: 'player', roomCode, playerId, nickname });
-    ws.setRejoinPayload({ roomCode, playerId, nickname });
-  };
 
   const choiceButtons = () => [...document.querySelectorAll('[data-choice]')];
   const lockChoices = (locked) => {
@@ -49,7 +33,12 @@ export function renderJoin(root, ws, playerId) {
     });
   };
 
-  document.getElementById('joinBtn')?.addEventListener('click', submitJoin);
+  document.getElementById('joinBtn')?.addEventListener('click', () => {
+    roomCode = String(document.getElementById('joinRoom')?.value || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
+    const nickname = sanitizeNickname(document.getElementById('joinNick')?.value);
+    ws.send('join_room', { role: 'player', roomCode, playerId, nickname });
+    ws.setRejoinPayload({ roomCode, playerId, nickname });
+  });
 
   choiceButtons().forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -62,9 +51,6 @@ export function renderJoin(root, ws, playerId) {
     if (el) el.textContent = state.connected
       ? `Realtime connected (reconnects: ${state.reconnectCount || 0})`
       : 'Realtime disconnected. Reconnecting…';
-    if (state.connected && prefilledRoom && !roomCode) {
-      submitJoin();
-    }
   });
 
   ws.on('latency', (data) => {
@@ -75,7 +61,7 @@ export function renderJoin(root, ws, playerId) {
   ws.on('lobby_state', (payload) => {
     if (payload.roomCode !== roomCode) return;
     const stateEl = document.getElementById('joinState');
-    if (stateEl) stateEl.textContent = `Connected. Players: ${payload.players.length} • State: ${payload.state} • Mode: ${payload.settings?.gameMode || 'classic'} • Timer: ${payload.settings?.timerSec || '--'}s`; 
+    if (stateEl) stateEl.textContent = `Connected. Players: ${payload.players.length} • State: ${payload.state}`;
   });
 
   ws.on('question', (payload) => {
