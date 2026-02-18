@@ -1,0 +1,22 @@
+{
+  "id": "sample_quiz_only",
+  "title": "Sample Quiz",
+  "source": "bundled",
+  "tags": ["sample"],
+  "modes": {
+    "flashcards": [],
+    "quiz": [
+      {
+        "id": "quiz_sample_1",
+        "question": "2 + 2 = ?",
+        "choices": { "A": "3", "B": "4", "C": "5", "D": "6" },
+        "correctChoice": "B",
+        "explanation": "Basic arithmetic addition.",
+        "tags": ["math"],
+        "difficulty": "easy",
+        "timeLimitSec": 10
+      }
+    ],
+    "fillBlank": []
+  }
+}
